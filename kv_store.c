@@ -11,11 +11,11 @@ unsigned int hash_function(const char *key, int capacity) {
     size_t size = strlen(key);
     int hashval = 5381;
     for(int i = 0; i<size;i++){
-        hashval += ((hashval << 5)+hashval)+ key[i];
+        hashval = ((hashval << 5)+hashval)+ key[i];
 
     }
 
-    return hashval&capacity; 
+    return (unsigned int)hashval % capacity; 
 }
 
 // 2. Initialization
@@ -42,23 +42,30 @@ bool kv_set(HashTable *table, const char *key, const char *value) {
     // TODO: Insert the new Node at the head of the linked list for that bucket.
     // TODO: Increment table->size and return true.
     int index = hash_function(key,table->capacity);
-    Node *head = table->buckets[index];
-    
-    if(!(head->key)){
-        free(head->value);
-        strcpy(head->value, value);
-        return true;
-    }else{
-        head = calloc(1,sizeof(Node));
-        
-        strcpy(head->key, key);
-        strcpy(head->value, value);
-        table->size++;
-        return true;
+    Node *current = table->buckets[index];
+
+    while(current){
+        if(strcmp(current->key,key) == 0){
+            free(current->value);
+            current->value = malloc(strlen(value)+1);
+            strcpy(current->value, value);
+            return true;
+        }
+        current = current->next;
     }
 
-
-    return false;
+    Node *new_node = malloc(sizeof(Node));
+    
+    new_node->key = malloc(strlen(key)+1);
+    strcpy(new_node->key, key);
+    
+    new_node->value = malloc(strlen(value)+1);
+    strcpy(new_node->value, value);
+    
+    new_node->next = table->buckets[index];
+    table->buckets[index] = new_node;
+    table->size++;
+    return true;
 }
 
 // 4. Retrieve
@@ -97,7 +104,10 @@ bool kv_delete(HashTable *table, const char *key) {
     while (todelete)
     {
         if(!(strcmp(todelete->key,key))){
-            prev = todelete->next;
+            if(prev == todelete){
+                table->buckets[index] = todelete->next;
+            }
+            prev->next = todelete->next;
             free(todelete->key);
             free(todelete->value);
             free(todelete);
@@ -105,9 +115,12 @@ bool kv_delete(HashTable *table, const char *key) {
             return true;
 
 
+        }else{
+            prev = todelete;
+            todelete = todelete->next;
         }
-        prev = todelete;
-        todelete = todelete->next;
+        
+        
         
     }
     
@@ -131,9 +144,9 @@ void free_table(HashTable *table) {
             free(head);
             head = next;
         }
-        free(table->buckets[i]);
+        
 
     }
-
+    free(table->buckets);
     free(table);
 }

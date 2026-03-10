@@ -1,0 +1,8 @@
+# Ignore all files without extensions (common for executables)
+* !*.*
+
+# Ignore .out files specifically
+*.out
+
+# Optional: Ignore other common binary types
+*.o *.so *.a *.dll *.dylib   
