@@ -1,0 +1,4 @@
+/home/rotich-kibet/Desktop/Key Value store/build/CMakeFiles/kv_store_lib.dir
+/home/rotich-kibet/Desktop/Key Value store/build/CMakeFiles/kv_server.dir
+/home/rotich-kibet/Desktop/Key Value store/build/CMakeFiles/edit_cache.dir
+/home/rotich-kibet/Desktop/Key Value store/build/CMakeFiles/rebuild_cache.dir

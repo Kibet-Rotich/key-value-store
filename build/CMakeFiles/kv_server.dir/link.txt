@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/kv_server.dir/link.d CMakeFiles/kv_server.dir/server.c.o -o kv_server  libkv_store_lib.a
