@@ -1,39 +1,58 @@
 # Key-Value Store in C
 
-A lightweight in-memory key-value store implemented in C, with a simple TCP server and Redis-like text commands.
+A lightweight in-memory key-value store implemented in C, with a TCP server and Redis-like text commands.
 
 ## Features
 
 - Hash table storage with separate chaining for collisions
 - `SET`, `GET`, and `DEL` command support
 - Quoted-token parsing (supports values with spaces)
-- Single-binary TCP server (listens on port `8080`)
-- Standalone test programs for store logic and parser behavior
+- Multi-threaded TCP server (thread-per-client)
+- Per-client request loop (clients can send multiple commands on one connection)
+- Mutex-protected store operations for thread-safe access (`SET`, `GET`, `DEL`)
+- Concurrency stress and integrity test scripts
 - Simple benchmark utility for insert/get performance
 
 ## Project Structure
 
 - `kv_store.c`, `kv_store.h` — core hash table implementation
 - `parser.c`, `parser.h` — command tokenizer and command execution
-- `server.c` — TCP server using the store + parser
+- `server.c` — threaded TCP server using the store + parser
+- `run.sh` — build-and-run helper for the server
 - `test.c` — functional test for the hash table API
 - `test parser.c` — functional test for command parsing/execution
 - `benchmark.c` — insert/get micro-benchmark
-- `test.py` — Python socket client script (see Known Issues)
+- `test.py` — Python socket client test
+- `stress_test.py` — concurrent stress/load test
+- `integrity_test.py` — concurrent correctness/integrity test
 - `kv_server` — prebuilt server binary
 
 ## Requirements
 
 - Linux (or any POSIX-like OS)
 - `gcc`
-- `make` is optional (commands below use `gcc` directly)
+- `cmake`
+- `python3` (for Python test scripts)
 
 ## Build
 
-From the project root:
+Recommended (from project root):
 
 ```bash
-gcc -Wall -Wextra -std=c11 server.c kv_store.c parser.c -o kv_server
+cmake -S . -B build
+cmake --build build --target kv_server
+```
+
+Or use the helper script:
+
+```bash
+./run.sh
+```
+
+Manual `gcc` build (alternative):
+
+```bash
+gcc -Wall -Wextra -std=c11 server.c kv_store.c parser.c -pthread -o kv_server
 ```
 
 Build test and benchmark binaries:
@@ -46,8 +65,16 @@ gcc -O2 -std=c11 benchmark.c kv_store.c -o benchmark
 
 ## Run the Server
 
+Using CMake output:
+
 ```bash
-./kv_server
+./build/kv_server
+```
+
+Or build + run in one command:
+
+```bash
+./run.sh
 ```
 
 Server output:
@@ -55,7 +82,7 @@ Server output:
 - `KV Store Server started on port 8080`
 - `Waiting for connection...`
 
-The server processes **one command per TCP connection** and replies with plain text.
+Each new client gets a worker thread. A connected client can issue multiple commands until it disconnects.
 
 ## Command Protocol
 
@@ -66,6 +93,12 @@ SET <key> <value>
 GET <key>
 DEL <key>
 ```
+
+Behavior notes:
+
+- Server sends a banner immediately on connect: `KV Store Server started on port 8080`
+- Commands are line-based text requests over TCP
+- A single TCP connection may carry multiple commands
 
 Responses:
 
@@ -87,17 +120,17 @@ GET greeting
 
 ## Quick Manual Test (with netcat)
 
-Start server in one terminal, then run each command in another terminal:
+Start server in one terminal, then run in another terminal:
 
 ```bash
-printf "SET name Alice\n" | nc 127.0.0.1 8080
-printf "GET name\n" | nc 127.0.0.1 8080
-printf "DEL name\n" | nc 127.0.0.1 8080
+printf "SET name Alice\nGET name\nDEL name\n" | nc 127.0.0.1 8080
 ```
 
-Expected responses are `OK`, `Alice`, and `(integer) 1` respectively.
+Expected responses include the banner, then `OK`, `Alice`, and `(integer) 1`.
 
 ## Run Tests
+
+Start the server first (`./run.sh` or `./build/kv_server`), then run tests from another terminal.
 
 Hash table test:
 
@@ -117,18 +150,37 @@ Benchmark:
 ./benchmark
 ```
 
+Python functional socket test:
+
+```bash
+python3 test.py
+```
+
+Concurrency stress test:
+
+```bash
+python3 stress_test.py
+```
+
+Integrity stress test:
+
+```bash
+python3 integrity_test.py
+```
+
 ## Known Issues / Current Limitations
 
 - In-memory only (no persistence to disk)
-- Single-threaded server
 - Fixed port (`8080`) compiled into `server.c`
-- No authentication/encryption
-- The server sends a short banner on connect so clients that read a greeting first can proceed
+- No authentication or encryption
+- No durable logging / audit trail yet
 
 ## Next Improvements
 
 - Add configurable host/port via CLI flags
-- Add request loop per client connection (instead of one command per connection)
-- Add graceful shutdown and signal handling
-- Add persistence (append-only log or snapshot)
+- Add graceful shutdown and coordinated thread cleanup
+- Add persistence to disk (append-only log and snapshots)
+- Add recovery from persisted state on startup
+- Add authentication and transport encryption
+- Add structured logging and metrics
 - Add automated tests (e.g., `ctest` or lightweight assertion framework)
