@@ -123,7 +123,7 @@ Benchmark:
 - Single-threaded server
 - Fixed port (`8080`) compiled into `server.c`
 - No authentication/encryption
-- `test.py` currently times out because it waits for a welcome message that the server does not send before receiving a command
+- The server sends a short banner on connect so clients that read a greeting first can proceed
 
 ## Next Improvements
 
