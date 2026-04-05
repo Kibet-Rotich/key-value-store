@@ -35,7 +35,7 @@ bool kv_set(HashTable *table, const char *key, const char *value) {
 
     int index = hash_function(key,table->capacity);
     Node *current = table->buckets[index];
-    sleep(1); //simulating heavy load "trying to force a phantom read, lost update or segfault"
+
 
 
     while(current){

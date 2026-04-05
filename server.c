@@ -5,7 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <pthread.h>      
+#include <pthread.h> 
+#include <signal.h>     
 
 #include "kv_store.h"
 #include "parser.h"
@@ -67,6 +68,8 @@ void *handle_client(void *arg) {
 
 
 int main() {
+
+    signal(SIGPIPE,SIG_IGN);//tell OS, when you get a sigpipe command, dont kill my process, just return -1 and it will be handled in my c program
     int server_fd, client_fd;
     struct sockaddr_in address;
     int opt = 1;
