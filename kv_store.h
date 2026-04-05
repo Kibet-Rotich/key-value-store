@@ -2,6 +2,7 @@
 #define KV_STORE_H
 
 #include <stdbool.h>
+#include <pthread.h>
 
 // A single Key-Value pair stored as a node in a linked list
 typedef struct Node {
@@ -15,6 +16,7 @@ typedef struct {
     Node **buckets;    // Array of pointers to Nodes
     int capacity;      // Total number of buckets
     int size;          // Total number of key-value pairs currently stored
+    pthread_mutex_t lock; // Master lock for thread-safe access
 } HashTable;
 
 // --- Core API ---

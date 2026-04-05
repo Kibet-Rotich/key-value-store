@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+find_package(Threads REQUIRED)
+
 add_library(kv_store_lib STATIC
     kv_store.c
     parser.c
@@ -20,6 +22,7 @@ add_executable(kv_server
 )
 
 target_link_libraries(kv_server PRIVATE kv_store_lib)
+target_link_libraries(kv_store_lib PRIVATE Threads::Threads)
 
 target_compile_options(kv_store_lib PRIVATE -Wall -Wextra)
 target_compile_options(kv_server PRIVATE -Wall -Wextra)
